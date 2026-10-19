@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2563eb" />
+    <title>Perpustakaan SDN 013 Kepenuhan</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --dark: #0f172a;
+        --muted: #64748b;
+        --bg: #f1f5f9;
+        --card: #ffffff;
+        --danger: #dc2626;
+        --ok: #16a34a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: #0f172a;
+        overflow-x: hidden;
+      }
+
+      .app {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .side {
+        position: fixed;
+        width: 250px;
+        height: 100vh;
+        height: 100dvh;
+        padding: 24px 16px;
+        background: linear-gradient(180deg, var(--dark), #1e3a8a);
+        color: white;
+        z-index: 21;
+      }
+
+      .brand {
+        margin-bottom: 28px;
+        font-size: 19px;
+        font-weight: 800;
+        line-height: 1.25;
+      }
+
+      .brand small {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+        font-weight: 500;
+        opacity: 0.75;
+      }
+
+      .nav button {
+        width: 100%;
+        margin: 3px 0;
+        padding: 12px 14px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #dbeafe;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .nav button.active,
+      .nav button:hover {
+        background: rgba(255, 255, 255, 0.11);
+        color: white;
+      }
+
+      .mobile-nav-backdrop {
+        display: none;
+      }
+
+      .main {
+        width: calc(100% - 250px);
+        max-width: 1600px;
+        margin-left: 250px;
+        padding: 28px;
+      }
+
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      .database-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: -10px 0 18px;
+        padding: 10px 14px;
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+        background: #f0fdf4;
+        color: #166534;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+
+      .database-status.error {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+      }
+
+      .database-status button {
+        flex: 0 0 auto;
+      }
+
+      .database-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.72);
+      }
+
+      .database-loading[hidden],
+      .database-status[hidden],
+      .database-loading button[hidden],
+      .database-status button[hidden] {
+        display: none;
+      }
+
+      .database-loading-card {
+        width: min(420px, 100%);
+        padding: 24px;
+        border-radius: 16px;
+        background: white;
+        text-align: center;
+        box-shadow: 0 15px 40px rgba(15, 23, 42, 0.25);
+      }
+
+      .database-loading-card p {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .admin-login {
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        display: grid;
+        place-items: center;
+        overflow-y: auto;
+        padding: 24px;
+        background:
+          radial-gradient(circle at top left, rgba(59, 130, 246, 0.28), transparent 38%),
+          linear-gradient(145deg, #0f172a, #1e3a8a);
+      }
+
+      .admin-login[hidden],
+      .app[hidden] {
+        display: none !important;
+      }
+
+      .admin-login-card {
+        width: min(420px, 100%);
+        padding: 30px;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 25px 70px rgba(2, 6, 23, 0.35);
+      }
+
+      .admin-login-card h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .admin-login-card > p {
+        margin: 9px 0 22px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .admin-login-form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .admin-login-form label {
+        display: grid;
+        gap: 6px;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .admin-login-form input {
+        width: 100%;
+        min-height: 46px;
+      }
+
+      .admin-login-form .btn {
+        min-height: 46px;
+      }
+
+      .admin-login-message {
+        min-height: 20px;
+        margin: 0;
+        color: #b91c1c;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .admin-login-message.success {
+        color: #15803d;
+      }
+
+      .admin-login-message.info {
+        color: #475569;
+      }
+
+      .top h1 {
+        margin: 0;
+        font-size: 26px;
+      }
+
+      .subtitle {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .card,
+      .panel {
+        background: var(--card);
+        border-radius: 16px;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, 0.06);
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .metric {
+        margin-top: 8px;
+        font-size: 28px;
+        font-weight: 800;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .panel {
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .panel h2 {
+        margin: 0 0 16px;
+        font-size: 18px;
+      }
+
+      .report-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .report-heading h2 {
+        margin: 0;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      input,
+      select {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        background: white;
+        outline: none;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--primary);
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 9px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .primary {
+        background: var(--primary);
+        color: white;
+      }
+
+      .secondary {
+        background: #e2e8f0;
+      }
+
+      .danger {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .success {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .table-wrap {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .report-table-scroll {
+        max-height: 279px;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .report-table-scroll th,
+      .report-table-scroll td {
+        height: 44px;
+        white-space: nowrap;
+      }
+
+      .report-table-scroll th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+      }
+
+      th {
+        color: #475569;
+        background: #f8fafc;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 5px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .badge.ok {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .badge.warn {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.6);
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modalbox {
+        width: min(620px, 100%);
+        max-height: 90vh;
+        padding: 22px;
+        border-radius: 16px;
+        background: white;
+        overflow: auto;
+      }
+
+      .formgrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .formgrid label {
+        font-size: 12px;
+        color: #475569;
+      }
+
+      .formgrid input,
+      .formgrid select {
+        width: 100%;
+        margin-top: 5px;
+      }
+
+      .member-photo-field {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .member-photo-preview,
+      .member-photo-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        overflow: hidden;
+        border-radius: 50%;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 700;
+      }
+
+      .member-photo-preview {
+        width: 76px;
+        height: 76px;
+        font-size: 22px;
+      }
+
+      .member-photo-preview img,
+      .member-photo-cell img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .member-photo-cell {
+        width: 40px;
+        height: 40px;
+        font-size: 13px;
+      }
+
+      .member-photo-actions {
+        min-width: 0;
+      }
+
+      .member-photo-actions input {
+        max-width: 100%;
+      }
+
+      .member-photo-hint {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .field-hint {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .full {
+        grid-column: 1 / -1;
+      }
+
+      .qrbox {
+        display: flex;
+        justify-content: center;
+        padding: 15px;
+      }
+
+      .empty {
+        padding: 35px;
+        text-align: center;
+        color: #94a3b8;
+      }
+
+      .scan-popup {
+        z-index: 30;
+      }
+
+      .scan-popupbox {
+        width: min(390px, 100%);
+        padding: 26px 22px 20px;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+        text-align: center;
+        animation: scan-popup-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1.15) both;
+      }
+
+      .scan-popup-icon {
+        display: grid;
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 14px;
+        place-items: center;
+        border-radius: 50%;
+        color: white;
+        font-size: 40px;
+        font-weight: 800;
+      }
+
+      .scan-popupbox.success .scan-popup-icon {
+        background: #16a34a;
+      }
+
+      .scan-popupbox.error .scan-popup-icon {
+        background: #dc2626;
+      }
+
+      .scan-popupbox h2 {
+        margin: 0 0 8px;
+      }
+
+      .scan-popup-message {
+        margin: 0 0 20px;
+        color: #475569;
+        overflow-wrap: anywhere;
+      }
+
+      .scan-popupbox.error h2 {
+        color: #b91c1c;
+      }
+
+      .scan-popupbox.success h2 {
+        color: #15803d;
+      }
+
+      @keyframes scan-popup-in {
+        from {
+          opacity: 0;
+          transform: translateY(12px) scale(0.92);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .scan-popupbox {
+          animation: none;
+        }
+      }
+
+      #reader {
+        position: relative;
+        width: min(720px, 100%);
+        min-height: 280px;
+        margin: auto;
+        overflow: hidden;
+        border: 1px solid #cbd5e1;
+        border-radius: 16px;
+        background: #0f172a;
+      }
+
+      #reader::before {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: #e2e8f0;
+        content: "Tampilan kamera akan muncul di sini";
+        text-align: center;
+        pointer-events: none;
+      }
+
+      #reader.is-scanning::before {
+        display: none;
+      }
+
+      #reader video {
+        display: block;
+        width: 100% !important;
+        max-height: min(65vh, 560px);
+        object-fit: cover;
+      }
+
+      .scanner-instructions {
+        margin: -4px 0 16px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .scanner-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+
+      .scanner-status {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .scanner-status[data-state="active"] {
+        color: #15803d;
+        font-weight: 700;
+      }
+
+      .scanner-status[data-state="error"] {
+        color: #b91c1c;
+      }
+
+      .mobile-menu {
+        display: none;
+      }
+
+      @media (max-width: 900px) {
+        .side {
+          display: block;
+          top: 0;
+          left: 0;
+          width: min(290px, 85vw);
+          height: 100vh;
+          height: 100dvh;
+          overflow-y: auto;
+          padding-top: max(24px, env(safe-area-inset-top));
+          transform: translateX(-100%);
+          transition: transform 180ms ease;
+          box-shadow: 12px 0 30px rgba(15, 23, 42, 0.2);
+        }
+
+        .side.open {
+          transform: translateX(0);
+        }
+
+        .mobile-nav-backdrop.show {
+          display: block;
+          position: fixed;
+          inset: 0;
+          z-index: 20;
+          width: 100%;
+          height: 100%;
+          border: 0;
+          background: rgba(15, 23, 42, 0.5);
+        }
+
+        .main {
+          width: 100%;
+          margin-left: 0;
+          padding: 18px;
+        }
+
+        .cards {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .mobile-menu {
+          display: block;
+          flex: 0 0 auto;
+        }
+
+        .formgrid {
+          grid-template-columns: 1fr;
+        }
+
+        .table-wrap {
+          margin-right: -4px;
+        }
+      }
+
+      @media (max-width: 500px) {
+        .cards {
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+
+        .card {
+          padding: 14px;
+          border-radius: 12px;
+        }
+
+        .metric {
+          font-size: 24px;
+        }
+
+        .label {
+          font-size: 12px;
+        }
+
+        .top h1 {
+          font-size: 20px;
+        }
+
+        .main {
+          padding: 14px 12px calc(20px + env(safe-area-inset-bottom));
+        }
+
+        .panel {
+          padding: 16px;
+          margin-bottom: 14px;
+          border-radius: 14px;
+        }
+
+        .top {
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+
+        .subtitle {
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+        .toolbar > input,
+        .toolbar > select {
+          width: 100%;
+          min-height: 44px;
+        }
+
+        .toolbar > .btn {
+          min-height: 44px;
+        }
+
+        .report-heading {
+          align-items: stretch;
+        }
+
+        .report-heading .btn {
+          min-height: 44px;
+          width: 100%;
+        }
+
+        .modal {
+          align-items: flex-end;
+          padding: 10px;
+          padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        .modalbox {
+          max-height: 92vh;
+          max-height: 92dvh;
+          padding: 18px;
+          border-radius: 16px 16px 12px 12px;
+        }
+
+        .modalbox .btn {
+          min-height: 44px;
+        }
+
+        #reader {
+          max-width: 100%;
+        }
+
+        #reader video {
+          max-width: 100%;
+        }
+
+        .scanner-controls {
+          align-items: stretch;
+        }
+
+        .scanner-controls .btn {
+          width: 100%;
+          min-height: 46px;
+        }
+
+        .scanner-status {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section id="adminLogin" class="admin-login" aria-labelledby="adminLoginTitle">
+      <div class="admin-login-card">
+        <div class="brand" style="margin-bottom: 18px; color: #1e3a8a">
+          📚 PERPUSTAKAAN
+          <small style="color: #475569; opacity: 1">SDN 013 KEPENUHAN</small>
+        </div>
+        <h1 id="adminLoginTitle">Login Admin</h1>
+        <p>Masuk untuk mengakses aplikasi perpustakaan.</p>
+        <form id="adminLoginForm" class="admin-login-form">
+          <label for="adminUsername">Email admin
+            <input id="adminUsername" name="username" type="email" autocomplete="username" maxlength="254" required />
+          </label>
+          <label for="adminPassword">Password
+            <input id="adminPassword" name="password" type="password" autocomplete="current-password" maxlength="256" required />
+          </label>
+          <button id="adminLoginButton" class="btn primary" type="submit">Masuk</button>
+          <p id="adminLoginMessage" class="admin-login-message" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+    <div class="app" id="application" hidden>
+      <aside class="side" id="sideNavigation">
+        <div class="brand">
+          📚 PERPUSTAKAAN
+          <small>SDN 013 KEPENUHAN</small>
+        </div>
+
+        <div class="nav">
+          <button class="active" data-page="dashboard" onclick="showPage('dashboard')">🏠 Dashboard</button>
+          <button data-page="books" onclick="showPage('books')">📚 Data Buku</button>
+          <button data-page="members" onclick="showPage('members')">👨‍🎓 Data Anggota</button>
+          <button data-page="loans" onclick="showPage('loans')">🔄 Peminjaman</button>
+          <button data-page="returns" onclick="showPage('returns')">↩️ Pengembalian</button>
+          <button data-page="reports" onclick="showPage('reports')">📊 Laporan</button>
+          <button data-page="scanner" onclick="showPage('scanner')">📷 Scan QR</button>
+        </div>
+      </aside>
+      <button
+        class="mobile-nav-backdrop"
+        id="mobileNavBackdrop"
+        aria-label="Tutup menu navigasi"
+      ></button>
+
+      <main class="main">
+        <div class="top">
+          <div>
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="subtitle">Sistem Perpustakaan Digital • Tahun Ajaran 2026/2027</div>
+          </div>
+          <button
+            class="btn secondary mobile-menu"
+            id="mobileMenuButton"
+            aria-controls="sideNavigation"
+            aria-expanded="false"
+          >
+            ☰ Menu
+          </button>
+        </div>
+        <div id="databaseStatus" class="database-status" role="status" aria-live="polite" hidden>
+          <span id="databaseStatusMessage"></span>
+          <button id="databaseImportButton" class="btn secondary" type="button" onclick="openDatabaseImport()" hidden>Impor data lama</button>
+          <button id="adminLogoutButton" class="btn secondary" type="button" onclick="logoutAdmin()" hidden>Keluar</button>
+          <button id="databaseRetryButton" class="btn secondary" type="button" onclick="retryDatabaseSync()" hidden>Coba lagi</button>
+        </div>
+
+        <section id="dashboard" class="page">
+          <div class="cards">
+            <div class="card">
+              <div class="label">Total Buku</div>
+              <div class="metric" id="mBooks">0</div>
+            </div>
+            <div class="card">
+              <div class="label">Total Anggota</div>
+              <div class="metric" id="mMembers">0</div>
+            </div>
+            <div class="card">
+              <div class="label">Sedang Dipinjam</div>
+              <div class="metric" id="mLoans">0</div>
+            </div>
+            <div class="card">
+              <div class="label">Terlambat</div>
+              <div class="metric" id="mLate">0</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Selamat Datang 👋</h2>
+            <p>
+              Kelola buku, anggota, peminjaman, pengembalian, dan QR Code perpustakaan SDN 013
+              Kepenuhan dari satu aplikasi.
+            </p>
+          </div>
+        </section>
+
+        <section id="books" class="page" style="display: none">
+          <div class="panel">
+            <h2>📚 Data Buku</h2>
+            <div class="toolbar">
+              <input id="bookSearch" placeholder="Cari judul/kode/kategori..." oninput="renderBooks()" />
+              <button class="btn primary" onclick="openBook()">+ Tambah Buku</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Kode</th>
+                    <th>Judul</th>
+                    <th>Penulis</th>
+                    <th>Kategori</th>
+                    <th>Stok</th>
+                    <th>QR</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="bookRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="members" class="page" style="display: none">
+          <div class="panel">
+            <h2>👨‍🎓 Data Anggota</h2>
+            <div class="toolbar">
+              <input id="memberSearch" placeholder="Cari nama/NIS/kelas..." oninput="renderMembers()" />
+              <button class="btn primary" onclick="openMember()">+ Tambah Anggota</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Foto</th>
+                    <th>No. Anggota</th>
+                    <th>NIS/NISN</th>
+                    <th>Nama</th>
+                    <th>Kelas</th>
+                    <th>QR</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="memberRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="loans" class="page" style="display: none">
+          <div class="panel">
+            <h2>🔄 Peminjaman Buku</h2>
+            <div class="toolbar">
+              <input id="loanSearch" type="search" placeholder="Cari ID, anggota, atau buku..." aria-label="Cari ID, anggota, atau buku" oninput="renderLoans()" />
+              <button class="btn primary" onclick="openLoan()">+ Transaksi Peminjaman</button>
+              <button class="btn secondary" onclick="showPage('scanner')">📷 Scan QR</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Anggota</th>
+                    <th>Buku</th>
+                    <th>Tgl Pinjam</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="loanRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="returns" class="page" style="display: none">
+          <div class="panel">
+            <h2>↩️ Pengembalian</h2>
+            <p>Tekan tombol pengembalian pada transaksi yang masih aktif.</p>
+            <div class="toolbar">
+              <input id="returnSearch" type="search" placeholder="Cari ID, anggota, atau buku..." aria-label="Cari ID, anggota, atau buku pada pengembalian" oninput="renderReturns()" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Anggota</th>
+                    <th>Buku</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="returnRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="reports" class="page" style="display: none">
+          <div class="panel">
+            <h2>📊 Laporan</h2>
+            <p>Setiap laporan dapat diunduh secara terpisah dalam format Excel (.xlsx).</p>
+          </div>
+
+          <div class="panel">
+            <div class="report-heading">
+              <h2>🚶 Laporan Pengunjung</h2>
+              <button class="btn success" onclick="exportReport('visitors')">⬇️ Unduh Excel Pengunjung</button>
+            </div>
+            <p>Scan anggota bergantian sebagai Masuk lalu Keluar. Scan berulang dalam 10 detik diabaikan agar kamera tidak mencatat QR yang sama berkali-kali.</p>
+            <div class="table-wrap report-table-scroll" id="visitorReportTable"></div>
+          </div>
+
+          <div class="panel">
+            <div class="report-heading">
+              <h2>📚 Laporan Data Buku</h2>
+              <button class="btn success" onclick="exportReport('books')">⬇️ Unduh Excel Buku</button>
+            </div>
+            <div class="table-wrap report-table-scroll" id="bookReportTable"></div>
+          </div>
+
+          <div class="panel">
+            <div class="report-heading">
+              <h2>👨‍🎓 Laporan Data Anggota</h2>
+              <button class="btn success" onclick="exportReport('members')">⬇️ Unduh Excel Anggota</button>
+            </div>
+            <div class="table-wrap report-table-scroll" id="memberReportTable"></div>
+          </div>
+
+          <div class="panel">
+            <div class="report-heading">
+              <h2>🔄 Laporan Data Peminjaman</h2>
+              <button class="btn success" onclick="exportReport('loans')">⬇️ Unduh Excel Peminjaman</button>
+            </div>
+            <div class="table-wrap report-table-scroll" id="loanReportTable"></div>
+          </div>
+
+          <div class="panel">
+            <div class="report-heading">
+              <h2>↩️ Laporan Data Pengembalian</h2>
+              <button class="btn success" onclick="exportReport('returns')">⬇️ Unduh Excel Pengembalian</button>
+            </div>
+            <div class="table-wrap report-table-scroll" id="returnReportTable"></div>
+          </div>
+
+        </section>
+
+        <section id="scanner" class="page" style="display: none">
+          <div class="panel scanner-panel">
+            <h2>📷 Scanner QR</h2>
+            <p class="scanner-instructions">Arahkan kamera belakang ke QR buku atau QR anggota. Posisikan kode di tengah kamera agar mudah terbaca.</p>
+            <div class="scanner-controls">
+              <button id="startScannerButton" class="btn primary" type="button" onclick="startScanner()">📷 Mulai pemindaian</button>
+              <p id="scannerStatus" class="scanner-status" role="status" aria-live="polite">Kamera akan aktif saat halaman pemindaian dibuka.</p>
+            </div>
+            <div id="reader"></div>
+            <div id="scanResult" class="empty">Belum ada QR yang dipindai.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div id="databaseLoading" class="database-loading" role="status" aria-live="polite" hidden>
+      <div class="database-loading-card">
+        <h2 id="databaseLoadingTitle">Menghubungkan database</h2>
+        <p id="databaseLoadingMessage">Mohon tunggu, data perpustakaan sedang dimuat.</p>
+        <button id="databaseLoadingRetryButton" class="btn primary" type="button" onclick="retryDatabaseSync()" hidden>Coba hubungkan lagi</button>
+      </div>
+    </div>
+    <div class="modal" id="databaseImportModal" role="dialog" aria-modal="true" aria-labelledby="databaseImportTitle">
+      <div class="modalbox">
+        <h2 id="databaseImportTitle">Impor data lama</h2>
+        <p>Tempel cadangan JSON dari browser lama. Data ini akan mengisi database Supabase yang masih kosong.</p>
+        <label for="databaseImportText">Data cadangan JSON</label>
+        <textarea id="databaseImportText" rows="10" style="width: 100%; margin-top: 6px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 9px; font-family: monospace"></textarea>
+        <div class="toolbar" style="margin-top: 14px">
+          <button id="databaseImportSubmit" class="btn primary" type="button" onclick="importDatabaseData()">Impor ke Supabase</button>
+          <button class="btn secondary" type="button" onclick="closeModal('databaseImportModal')">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal scan-popup" id="scanPopup" role="alertdialog" aria-modal="true" aria-labelledby="scanPopupTitle" aria-describedby="scanPopupMessage">
+      <div class="scan-popupbox" id="scanPopupBox">
+        <div class="scan-popup-icon" id="scanPopupIcon" aria-hidden="true">✓</div>
+        <h2 id="scanPopupTitle"></h2>
+        <p class="scan-popup-message" id="scanPopupMessage"></p>
+        <button class="btn secondary" onclick="closeScanPopup()">Tutup</button>
+      </div>
+    </div>
+
+    <div class="modal" id="bookModal">
+      <div class="modalbox">
+        <h2 id="bookModalTitle">Tambah Buku</h2>
+        <div class="formgrid">
+          <label>Kode Buku<input id="bCode" /></label>
+          <label>ISBN<input id="bIsbn" /></label>
+          <label class="full">Judul Buku<input id="bTitle" /></label>
+          <label>Penulis<input id="bAuthor" /></label>
+          <label>Penerbit<input id="bPublisher" /></label>
+          <label>Tahun<input id="bYear" type="number" /></label>
+          <label>Kategori<input id="bCategory" /></label>
+          <label>Stok<input id="bStock" type="number" min="1" value="1" /></label>
+        </div>
+        <div class="toolbar" style="margin-top: 18px">
+          <button class="btn primary" onclick="saveBook()">Simpan</button>
+          <button class="btn secondary" onclick="closeModal('bookModal')">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="memberModal">
+      <div class="modalbox">
+        <h2 id="memberModalTitle">Tambah Anggota</h2>
+        <div class="formgrid">
+          <div class="full member-photo-field">
+            <div class="member-photo-preview" id="memberPhotoPreview" aria-label="Pratinjau foto anggota">
+              Foto
+            </div>
+            <div class="member-photo-actions">
+              <label for="mPhoto">Foto Anggota</label>
+              <input id="mPhoto" type="file" accept="image/*" capture="user" />
+              <span class="member-photo-hint">Pilih foto atau gunakan kamera. Maksimal 10 MB.</span>
+            </div>
+          </div>
+          <label>
+            No. Anggota
+            <input id="mNo" readonly aria-describedby="memberNumberHint" />
+            <span class="field-hint" id="memberNumberHint">Nomor dibuat otomatis.</span>
+          </label>
+          <label id="memberNisField">NIS/NISN<input id="mNis" /></label>
+          <label class="full">Nama Lengkap<input id="mName" /></label>
+          <label id="memberClassField">Kelas<input id="mClass" /></label>
+          <label>
+            Jenis Anggota
+            <select id="mType">
+              <option>Siswa</option>
+              <option>Guru</option>
+            </select>
+          </label>
+        </div>
+        <div class="toolbar" style="margin-top: 18px">
+          <button class="btn primary" id="saveMemberButton" onclick="saveMember()">Simpan</button>
+          <button class="btn secondary" onclick="closeModal('memberModal')">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="qrModal">
+      <div class="modalbox" style="text-align: center">
+        <h2 id="qrTitle">QR Code</h2>
+        <div class="qrbox" id="qrBox"></div>
+        <p id="qrText"></p>
+        <button class="btn primary" onclick="printQR()">🖨️ Cetak QR</button>
+        <button class="btn secondary" onclick="closeModal('qrModal')">Tutup</button>
+      </div>
+    </div>
+
+    <div class="modal" id="loanModal">
+      <div class="modalbox">
+        <h2>Transaksi Peminjaman</h2>
+        <div class="formgrid">
+          <label>
+            Anggota
+            <select id="loanMember"></select>
+            <span class="field-hint" id="loanLimitHint">Maksimal 3 buku aktif per anggota.</span>
+          </label>
+          <label>
+            Buku
+            <select id="loanBook"></select>
+          </label>
+          <label>Tanggal Pinjam<input id="loanDate" type="date" /></label>
+          <label>Jatuh Tempo<input id="dueDate" type="date" /></label>
+        </div>
+        <div class="toolbar" style="margin-top: 18px">
+          <button class="btn primary" onclick="saveLoan()">Simpan</button>
+          <button class="btn secondary" onclick="closeModal('loanModal')">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const KEY = 'perpus_sdn013_v1';
+      const SUPABASE_CONFIG = window.SUPABASE_CONFIG || {};
+      let supabaseClient = null;
+      const state = {
+        books: [],
+        members: [],
+        loans: [],
+        visitors: [],
+        memberSequences: {}
+      };
+
+      let scanner = null;
+      let selectedMemberPhoto = '';
+      let editingMemberNo = null;
+      let lastChimeQr = '';
+      let lastChimeQrAt = 0;
+      let scanAudioContext = null;
+      let scanPopupTimer = null;
+      let databaseReady = false;
+      let databaseRevision = 0;
+      let databaseSaveQueue = Promise.resolve();
+      let databaseRetryMode = 'load';
+      let currentUser = null;
+      const MAX_ACTIVE_LOANS_PER_MEMBER = 3;
+      const VISITOR_SCAN_DEBOUNCE_MS = 10000;
+
+      function getElement(id) {
+        return document.getElementById(id);
+      }
+
+      function persist() {
+        cacheStateLocally();
+        updateAll();
+
+        if (supabaseClient && databaseReady && currentUser) {
+          queueDatabaseSave(JSON.parse(JSON.stringify(state)));
+        }
+      }
+
+      function cacheStateLocally() {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(state));
+        } catch (error) {
+          console.warn('Salinan lokal tidak dapat diperbarui.', error);
+          setDatabaseStatus(`Salinan lokal tidak dapat diperbarui: ${error.message}`, true);
+        }
+      }
+
+      async function getDatabaseSnapshot() {
+        const { data, error } = await supabaseClient
+          .from('library_data')
+          .select('data, revision')
+          .eq('id', 1)
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
+      async function saveDatabase(data, expectedRevision) {
+        const { data: revision, error } = await supabaseClient.rpc('save_library_data', {
+          p_data: data,
+          p_expected_revision: expectedRevision
+        });
+        if (error) throw error;
+        return Number(revision);
+      }
+
+      function setDatabaseStatus(message, isError = false, retryMode = '', showImport = false) {
+        const status = getElement('databaseStatus');
+        status.hidden = false;
+        status.classList.toggle('error', isError);
+        getElement('databaseStatusMessage').textContent = message;
+        getElement('databaseImportButton').hidden = !showImport;
+        getElement('adminLogoutButton').hidden = !currentUser;
+        const retryButton = getElement('databaseRetryButton');
+        retryButton.hidden = !retryMode;
+        databaseRetryMode = retryMode || 'load';
+        retryButton.textContent = retryMode === 'save' ? 'Coba simpan lagi' : 'Coba hubungkan lagi';
+      }
+
+      function queueDatabaseSave(snapshot) {
+        const userId = currentUser?.id;
+        databaseSaveQueue = databaseSaveQueue
+          .then(() => saveDatabase(snapshot, databaseRevision))
+          .then((revision) => {
+            if (userId !== currentUser?.id) {
+              return;
+            }
+            databaseRevision = revision;
+            setDatabaseStatus('Tersimpan di Supabase.');
+          })
+          .catch(async (error) => {
+            if (userId !== currentUser?.id) {
+              return;
+            }
+            console.error('Gagal menyimpan data ke Supabase.', error);
+            const isConflict = /berubah oleh pengguna lain/i.test(error.message);
+            if (isConflict) {
+              databaseReady = false;
+              getElement('application').hidden = true;
+              getElement('adminLogin').hidden = false;
+              currentUser = null;
+              setLoginMessage('Data berubah pada sesi lain. Muat ulang halaman dan masuk kembali untuk memuat data terbaru.');
+              const { error: signOutError } = await supabaseClient.auth.signOut();
+              if (signOutError) console.error('Sesi Supabase tidak dapat ditutup.', signOutError);
+            }
+            setDatabaseStatus(
+              isConflict
+                ? 'Database berubah pada sesi lain. Muat ulang halaman sebelum melanjutkan.'
+                : `Gagal menyimpan ke Supabase: ${error.message}. Data masih tersedia pada sesi ini; coba simpan lagi sebelum menutup halaman.`,
+              true,
+              isConflict ? '' : 'save'
+            );
+          });
+      }
+
+      function retryDatabaseSync() {
+        if (!supabaseClient || !currentUser) {
+          return;
+        }
+
+        if (databaseRetryMode === 'save') {
+          queueDatabaseSave(JSON.parse(JSON.stringify(state)));
+          return;
+        }
+
+        initializeSupabaseDatabase();
+      }
+
+      function setLoginMessage(message, type = '') {
+        const element = getElement('adminLoginMessage');
+        element.textContent = message;
+        element.className = `admin-login-message ${type}`.trim();
+      }
+
+      function submitAdminLogin(event) {
+        event.preventDefault();
+        if (!supabaseClient) {
+          setLoginMessage('Konfigurasi Supabase belum tersedia. Periksa file supabase-config.js.', 'info');
+          return;
+        }
+
+        const button = getElement('adminLoginButton');
+        button.disabled = true;
+        button.textContent = 'Memeriksa akun...';
+        setLoginMessage('');
+        supabaseClient.auth.signInWithPassword({
+          email: getElement('adminUsername').value.trim(),
+          password: getElement('adminPassword').value
+        })
+          .then(({ data, error }) => {
+            if (error) throw error;
+            if (!data?.user) throw new Error('Supabase tidak memberikan akun pengguna yang valid.');
+            currentUser = data.user;
+            getElement('adminPassword').value = '';
+            getElement('adminLogin').hidden = true;
+            return initializeSupabaseDatabase();
+          })
+          .catch((error) => {
+            console.error('Login admin gagal.', error);
+            setLoginMessage(error.message || 'Login gagal. Periksa username dan password.');
+          })
+          .finally(() => {
+            button.disabled = false;
+            button.textContent = 'Masuk';
+          });
+      }
+
+      async function logoutAdmin() {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+          console.error('Logout Supabase gagal.', error);
+          setDatabaseStatus(`Gagal keluar: ${error.message}`, true);
+          return;
+        }
+        currentUser = null;
+        databaseReady = false;
+        localStorage.removeItem(KEY);
+        getElement('application').hidden = true;
+        getElement('adminLogin').hidden = false;
+        getElement('adminPassword').value = '';
+        setLoginMessage('Anda telah keluar.', 'info');
+        getElement('databaseStatus').hidden = true;
+        getElement('databaseImportModal').classList.remove('show');
+
+        if (scanner) {
+          const activeScanner = scanner;
+          scanner = null;
+          activeScanner.stop().catch((error) => console.warn('Kamera tidak berhasil dihentikan saat logout.', error));
+        }
+
+      }
+
+      function openDatabaseImport() {
+        if (!supabaseClient || !currentUser) {
+          return;
+        }
+        getElement('databaseImportText').value = '';
+        getElement('databaseImportModal').classList.add('show');
+      }
+
+      function importDatabaseData() {
+        let imported;
+        try {
+          imported = JSON.parse(getElement('databaseImportText').value);
+        } catch (error) {
+          alert('Data cadangan bukan JSON yang valid.');
+          return;
+        }
+
+        if (!imported || !['books', 'members', 'loans'].every((key) => Array.isArray(imported[key]))) {
+          alert('Data cadangan harus berisi daftar books, members, dan loans.');
+          return;
+        }
+        if (!Array.isArray(imported.visitors)) imported.visitors = [];
+        if (!imported.memberSequences || typeof imported.memberSequences !== 'object') imported.memberSequences = {};
+
+        const submitButton = getElement('databaseImportSubmit');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Menyimpan data...';
+        saveDatabase(imported, databaseRevision)
+          .then((revision) => {
+            databaseRevision = revision;
+            Object.assign(state, imported);
+            cacheStateLocally();
+            updateAll();
+            closeModal('databaseImportModal');
+            setDatabaseStatus('Data lama berhasil dipindahkan ke Supabase.');
+          })
+          .catch((error) => {
+            console.error('Gagal mengimpor data ke Supabase.', error);
+            setDatabaseStatus(`Gagal mengimpor data: ${error.message}`, true, 'load');
+          })
+          .finally(() => {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Impor ke Supabase';
+          });
+      }
+
+      async function initializeSupabaseDatabase() {
+        if (!currentUser) {
+          return;
+        }
+        const loading = getElement('databaseLoading');
+        loading.hidden = false;
+        getElement('databaseLoadingTitle').textContent = 'Menghubungkan Supabase';
+        getElement('databaseLoadingMessage').textContent = 'Mohon tunggu, data perpustakaan sedang dimuat.';
+        getElement('databaseLoadingRetryButton').hidden = true;
+        try {
+          const result = await getDatabaseSnapshot();
+          if (!result || !result.data || typeof result.data !== 'object') {
+            throw new Error('Respons database Supabase tidak valid.');
+          }
+
+          let localSnapshot = null;
+          try {
+            localSnapshot = JSON.parse(localStorage.getItem(KEY) || 'null');
+          } catch (error) {
+            console.warn('Cadangan lokal tidak valid dan tidak akan diimpor.', error);
+          }
+          const localHasData = localSnapshot &&
+            ['books', 'members', 'loans', 'visitors'].some((key) => Array.isArray(localSnapshot[key]) && localSnapshot[key].length > 0);
+          databaseRevision = Number(result.revision) || 0;
+          const remoteHasData = ['books', 'members', 'loans', 'visitors'].some((key) =>
+            Array.isArray(result.data[key]) && result.data[key].length > 0);
+
+          if (remoteHasData) {
+            Object.assign(state, result.data);
+            setDatabaseStatus('Terhubung ke Supabase.');
+          } else if (localHasData && databaseRevision === 0) {
+            Object.assign(state, localSnapshot);
+            databaseRevision = await saveDatabase(JSON.parse(JSON.stringify(state)), databaseRevision);
+            setDatabaseStatus('Data lokal berhasil dipindahkan ke Supabase.');
+          } else {
+            Object.assign(state, result.data);
+            setDatabaseStatus('Supabase tersambung dan masih kosong.', false, '', true);
+          }
+
+          ['books', 'members', 'loans', 'visitors'].forEach((key) => {
+            if (!Array.isArray(state[key])) state[key] = [];
+          });
+          if (!state.memberSequences || typeof state.memberSequences !== 'object') {
+            state.memberSequences = {};
+          }
+          cacheStateLocally();
+          databaseReady = true;
+          updateAll();
+          loading.hidden = true;
+          getElement('application').hidden = false;
+          getElement('adminLogin').hidden = true;
+        } catch (error) {
+          console.error('Gagal memuat database Supabase.', error);
+          getElement('databaseLoadingTitle').textContent = 'Database belum tersambung';
+          getElement('databaseLoadingMessage').textContent = `Data tidak dimuat untuk mencegah perubahan menimpa database. ${error.message}`;
+          getElement('databaseLoadingRetryButton').hidden = false;
+          setDatabaseStatus(`Gagal terhubung ke Supabase: ${error.message}`, true, 'load');
+          getElement('adminLogin').hidden = false;
+          setLoginMessage(error.message, 'info');
+        }
+      }
+
+      function esc(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (match) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match]));
+      }
+
+      function toggleMobileMenu() {
+        const side = getElement('sideNavigation');
+        const isOpen = side.classList.toggle('open');
+
+        getElement('mobileMenuButton').setAttribute('aria-expanded', String(isOpen));
+        getElement('mobileNavBackdrop').classList.toggle('show', isOpen);
+      }
+
+      function closeMobileMenu() {
+        getElement('sideNavigation').classList.remove('open');
+        getElement('mobileMenuButton').setAttribute('aria-expanded', 'false');
+        getElement('mobileNavBackdrop').classList.remove('show');
+      }
+
+      function showPage(id) {
+        document.querySelectorAll('.page').forEach((page) => {
+          page.style.display = 'none';
+        });
+
+        getElement(id).style.display = 'block';
+
+        document.querySelectorAll('.nav button').forEach((navButton) => {
+          navButton.classList.toggle('active', navButton.dataset.page === id);
+        });
+
+        closeMobileMenu();
+
+        const titles = {
+          dashboard: 'Dashboard',
+          books: 'Data Buku',
+          members: 'Data Anggota',
+          loans: 'Peminjaman',
+          returns: 'Pengembalian',
+          reports: 'Laporan',
+          scanner: 'Scan QR'
+        };
+
+        getElement('pageTitle').textContent = titles[id];
+
+        if (id === 'scanner') {
+          startScanner();
+        }
+      }
+
+      function updateAll() {
+        renderBooks();
+        renderMembers();
+        renderLoans();
+        renderReturns();
+        renderReports();
+
+        getElement('mBooks').textContent = state.books.reduce(
+          (total, book) => total + Number(book.stock || 0),
+          0
+        );
+        getElement('mMembers').textContent = state.members.length;
+        getElement('mLoans').textContent = state.loans.filter((loan) => !loan.returned).length;
+
+        const today = new Date(new Date().toISOString().slice(0, 10));
+        getElement('mLate').textContent = state.loans.filter(
+          (loan) => !loan.returned && new Date(loan.due) < today
+        ).length;
+      }
+
+      function renderBooks() {
+        const query = (getElement('bookSearch')?.value || '').toLowerCase();
+
+        const rows = state.books
+          .filter((book) => (book.code + ' ' + book.title + ' ' + book.category).toLowerCase().includes(query))
+          .map(
+            (book) => `
+              <tr>
+                <td>${esc(book.code)}</td>
+                <td><b>${esc(book.title)}</b></td>
+                <td>${esc(book.author)}</td>
+                <td>${esc(book.category)}</td>
+                <td>${book.stock}</td>
+                <td><button class="btn secondary" onclick="showQR('book','${book.code}')">QR</button></td>
+                <td><button class="btn danger" onclick="deleteBook('${book.code}')">Hapus</button></td>
+              </tr>
+            `
+          )
+          .join('');
+
+        getElement('bookRows').innerHTML = rows || '<tr><td colspan="7" class="empty">Belum ada data buku.</td></tr>';
+      }
+
+      function renderMembers() {
+        const query = (getElement('memberSearch')?.value || '').toLowerCase();
+
+        const rows = state.members
+          .filter((member) => (member.no + ' ' + member.nis + ' ' + member.name + ' ' + member.cls).toLowerCase().includes(query))
+          .map((member) => {
+            const initials = (member.name || '?').trim().charAt(0).toUpperCase() || '?';
+            const photo = typeof member.photo === 'string' && /^data:image\/jpeg;base64,/i.test(member.photo)
+              ? `<img src="${member.photo}" alt="Foto ${esc(member.name)}" />`
+              : esc(initials);
+
+            return `
+              <tr>
+                <td><span class="member-photo-cell">${photo}</span></td>
+                <td>${esc(member.no)}</td>
+                <td>${esc(member.nis)}</td>
+                <td>${esc(member.name)}</td>
+                <td>${esc(member.cls)}</td>
+                <td><button class="btn secondary" data-member-action="qr" data-member-no="${esc(member.no)}">QR</button></td>
+                <td>
+                  <button class="btn secondary" data-member-action="edit" data-member-no="${esc(member.no)}">Edit</button>
+                  <button class="btn danger" data-member-action="delete" data-member-no="${esc(member.no)}">Hapus</button>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        getElement('memberRows').innerHTML = rows || '<tr><td colspan="7" class="empty">Belum ada anggota.</td></tr>';
+      }
+
+      function renderLoans() {
+        const query = (getElement('loanSearch')?.value || '').trim().toLowerCase();
+        const rows = state.loans
+          .map((loan) => {
+            const member = state.members.find((item) => item.no === loan.member);
+            const book = state.books.find((item) => item.code === loan.book);
+            const late = !loan.returned && new Date(loan.due) < new Date(new Date().toISOString().slice(0, 10));
+            const searchableText = [
+              loan.id,
+              loan.member,
+              member?.name,
+              member?.nis,
+              loan.book,
+              book?.title,
+              book?.author
+            ].join(' ').toLowerCase();
+
+            if (query && !searchableText.includes(query)) {
+              return '';
+            }
+
+            return `
+              <tr>
+                <td>${loan.id}</td>
+                <td>${esc(member?.name || loan.member)}</td>
+                <td>${esc(book?.title || loan.book)}</td>
+                <td>${loan.date}</td>
+                <td>${loan.due}</td>
+                <td>
+                  <span class="badge ${loan.returned ? 'ok' : late ? 'warn' : ''}">
+                    ${loan.returned ? 'Dikembalikan' : late ? 'Terlambat' : 'Dipinjam'}
+                  </span>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        const emptyMessage = state.loans.length
+          ? 'Tidak ada transaksi yang cocok dengan pencarian.'
+          : 'Belum ada transaksi.';
+        getElement('loanRows').innerHTML = rows || `<tr><td colspan="6" class="empty">${emptyMessage}</td></tr>`;
+      }
+
+      function renderReturns() {
+        const query = (getElement('returnSearch')?.value || '').trim().toLowerCase();
+        const rows = state.loans
+          .filter((loan) => !loan.returned)
+          .map((loan) => {
+            const member = state.members.find((item) => item.no === loan.member);
+            const book = state.books.find((item) => item.code === loan.book);
+            const searchableText = [
+              loan.id,
+              loan.member,
+              member?.name,
+              member?.nis,
+              loan.book,
+              book?.title,
+              book?.author
+            ].join(' ').toLowerCase();
+
+            if (query && !searchableText.includes(query)) {
+              return '';
+            }
+
+            return `
+              <tr>
+                <td>${loan.id}</td>
+                <td>${esc(member?.name || loan.member)}</td>
+                <td>${esc(book?.title || loan.book)}</td>
+                <td>${loan.due}</td>
+                <td><button class="btn success" onclick="returnBook('${loan.id}')">Kembalikan</button></td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        const hasActiveLoans = state.loans.some((loan) => !loan.returned);
+        const emptyMessage = hasActiveLoans
+          ? 'Tidak ada transaksi pengembalian yang cocok dengan pencarian.'
+          : 'Tidak ada buku yang sedang dipinjam.';
+        getElement('returnRows').innerHTML = rows || `<tr><td colspan="5" class="empty">${emptyMessage}</td></tr>`;
+      }
+
+      function getReportDefinitions() {
+        const today = new Date(new Date().toISOString().slice(0, 10));
+        const definitions = {
+          books: {
+            filename: 'laporan-data-buku.xlsx',
+            target: 'bookReportTable',
+            columns: ['Kode Buku', 'ISBN', 'Judul', 'Penulis', 'Penerbit', 'Tahun', 'Kategori', 'Stok'],
+            rows: state.books.map((book) => [
+              book.code || '',
+              book.isbn || '',
+              book.title || '',
+              book.author || '',
+              book.publisher || '',
+              book.year || '',
+              book.category || '',
+              Number(book.stock) || 0
+            ])
+          },
+          members: {
+            filename: 'laporan-data-anggota.xlsx',
+            target: 'memberReportTable',
+            columns: ['No. Anggota', 'NIS/NISN', 'Nama', 'Kelas', 'Jenis Anggota'],
+            rows: state.members.map((member) => [
+              member.no || '',
+              member.nis || '',
+              member.name || '',
+              member.cls || '',
+              member.type || ''
+            ])
+          },
+          loans: {
+            filename: 'laporan-data-peminjaman.xlsx',
+            target: 'loanReportTable',
+            columns: ['ID Peminjaman', 'No. Anggota', 'Nama Anggota', 'NIS/NISN', 'Kode Buku', 'Judul Buku', 'Tanggal Pinjam', 'Jatuh Tempo', 'Tanggal Kembali', 'Status'],
+            rows: state.loans.map((loan) => {
+              const member = state.members.find((item) => item.no === loan.member);
+              const book = state.books.find((item) => item.code === loan.book);
+              const late = !loan.returned && new Date(loan.due) < today;
+              const status = loan.returned ? 'Dikembalikan' : late ? 'Terlambat' : 'Dipinjam';
+
+              return [
+                loan.id || '',
+                loan.member || '',
+                member?.name || '',
+                member?.nis || '',
+                loan.book || '',
+                book?.title || '',
+                loan.date || '',
+                loan.due || '',
+                loan.returnDate || '',
+                status
+              ];
+            })
+          },
+          returns: {
+            filename: 'laporan-data-pengembalian.xlsx',
+            target: 'returnReportTable',
+            columns: ['ID Peminjaman', 'No. Anggota', 'Nama Anggota', 'NIS/NISN', 'Kode Buku', 'Judul Buku', 'Tanggal Pinjam', 'Jatuh Tempo', 'Tanggal Kembali'],
+            rows: state.loans
+              .filter((loan) => loan.returned)
+              .map((loan) => {
+                const member = state.members.find((item) => item.no === loan.member);
+                const book = state.books.find((item) => item.code === loan.book);
+
+                return [
+                  loan.id || '',
+                  loan.member || '',
+                  member?.name || '',
+                  member?.nis || '',
+                  loan.book || '',
+                  book?.title || '',
+                  loan.date || '',
+                  loan.due || '',
+                  loan.returnDate || ''
+                ];
+              })
+          },
+          visitors: {
+            filename: 'laporan-pengunjung.xlsx',
+            target: 'visitorReportTable',
+            columns: ['Waktu Scan', 'Status Scan', 'No. Anggota', 'Nama Pengunjung', 'Jenis Anggota', 'Jenis Barcode', 'Kode Barcode', 'Kunjungan Ke-', 'Selang dari Kunjungan Sebelumnya'],
+            rows: getVisitorReportRows()
+          }
+        };
+
+        return definitions;
+      }
+
+      function getVisitorReportRows() {
+        const visitDetails = new Map();
+        const previousVisits = new Map();
+        const chronologicalVisitors = [...state.visitors].sort(
+          (left, right) => new Date(left.scannedAt).getTime() - new Date(right.scannedAt).getTime()
+        );
+
+        chronologicalVisitors.forEach((visitor) => {
+          const memberKey = String(visitor.memberNo || visitor.barcode || '').toLowerCase();
+          const scannedAt = new Date(visitor.scannedAt).getTime();
+          const previous = previousVisits.get(memberKey);
+          const scanNumber = (previous?.scanNumber || 0) + 1;
+          const visitNumber = Math.ceil(scanNumber / 2);
+          const direction = visitor.direction || (scanNumber % 2 === 1 ? 'Masuk' : 'Keluar');
+          const elapsedMs = direction === 'Keluar' && previous?.direction === 'Masuk'
+            ? Math.max(0, scannedAt - previous.scannedAt)
+            : null;
+
+          visitDetails.set(visitor, { scanNumber, visitNumber, direction, elapsedMs });
+          previousVisits.set(memberKey, { scanNumber, scannedAt, direction });
+        });
+
+        return state.visitors.map((visitor) => {
+          const details = visitDetails.get(visitor);
+          return [
+            visitor.scannedAt ? new Date(visitor.scannedAt).toLocaleString('id-ID') : '',
+            details?.direction || '',
+            visitor.memberNo || '',
+            visitor.name || '',
+            visitor.memberType || '',
+            visitor.barcodeLabel || '',
+            visitor.barcode || '',
+            details?.visitNumber || '',
+            details?.elapsedMs === null || details?.elapsedMs === undefined
+              ? '—'
+              : formatElapsedTime(details.elapsedMs)
+          ];
+        });
+      }
+
+      function formatElapsedTime(milliseconds) {
+        const totalSeconds = Math.floor(Math.max(0, milliseconds) / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const parts = [];
+
+        if (days) parts.push(`${days} hari`);
+        if (hours) parts.push(`${hours} jam`);
+        if (minutes) parts.push(`${minutes} menit`);
+        if (seconds || parts.length === 0) parts.push(`${seconds} detik`);
+
+        return parts.join(' ');
+      }
+
+      function renderReports() {
+        const definitions = getReportDefinitions();
+
+        Object.values(definitions).forEach((report) => {
+          const table = report.rows.length
+            ? `<table><thead><tr>${report.columns.map((column) => `<th>${esc(column)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((row) => `<tr>${row.map((value) => `<td>${esc(value)}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+            : '<div class="empty">Belum ada data untuk laporan ini.</div>';
+
+          getElement(report.target).innerHTML = table;
+        });
+      }
+
+      function exportReport(reportType) {
+        const spreadsheet = window.XLSX;
+        if (!spreadsheet) {
+          alert('Fitur Excel belum tersedia. Periksa koneksi internet lalu muat ulang aplikasi.');
+          return;
+        }
+
+        const report = getReportDefinitions()[reportType];
+        if (!report) {
+          alert('Jenis laporan tidak dikenal.');
+          return;
+        }
+
+        const worksheet = spreadsheet.utils.aoa_to_sheet([report.columns, ...report.rows]);
+        worksheet['!cols'] = report.columns.map((column, index) => {
+          const widestValue = report.rows.reduce(
+            (max, row) => Math.max(max, String(row[index] ?? '').length),
+            column.length
+          );
+          return { wch: Math.min(Math.max(widestValue + 2, 12), 40) };
+        });
+
+        const workbook = spreadsheet.utils.book_new();
+        spreadsheet.utils.book_append_sheet(workbook, worksheet, 'Laporan');
+        spreadsheet.writeFile(workbook, report.filename);
+      }
+
+      function openBook() {
+        ['bCode', 'bIsbn', 'bTitle', 'bAuthor', 'bPublisher', 'bYear', 'bCategory'].forEach((id) => {
+          getElement(id).value = '';
+        });
+
+        getElement('bStock').value = 1;
+        getElement('bookModal').classList.add('show');
+      }
+
+      function saveBook() {
+        const book = {
+          code: getElement('bCode').value.trim(),
+          isbn: getElement('bIsbn').value.trim(),
+          title: getElement('bTitle').value.trim(),
+          author: getElement('bAuthor').value.trim(),
+          publisher: getElement('bPublisher').value.trim(),
+          year: getElement('bYear').value,
+          category: getElement('bCategory').value.trim(),
+          stock: Number(getElement('bStock').value)
+        };
+
+        if (!book.code || !book.title) {
+          alert('Kode dan judul buku wajib diisi.');
+          return;
+        }
+
+        if (state.books.some((item) => item.code === book.code)) {
+          alert('Kode buku sudah ada.');
+          return;
+        }
+
+        state.books.push(book);
+        persist();
+        closeModal('bookModal');
+      }
+
+      function deleteBook(code) {
+        if (!confirm('Hapus buku ini?')) {
+          return;
+        }
+
+        state.books = state.books.filter((book) => book.code !== code);
+        persist();
+      }
+
+      function openMember() {
+        editingMemberNo = null;
+        ['mNo', 'mNis', 'mName', 'mClass'].forEach((id) => {
+          getElement(id).value = '';
+        });
+
+        getElement('memberModalTitle').textContent = 'Tambah Anggota';
+        getElement('saveMemberButton').textContent = 'Simpan';
+        getElement('mNo').readOnly = true;
+        getElement('memberNumberHint').textContent = 'Nomor dibuat otomatis.';
+        getElement('mPhoto').value = '';
+        selectedMemberPhoto = '';
+        setMemberPhotoPreview('');
+        getElement('mType').value = 'Siswa';
+        getElement('mNo').value = generateMemberNumber('Siswa');
+        updateMemberTypeFields();
+        getElement('memberModal').classList.add('show');
+      }
+
+      function editMember(no) {
+        const member = state.members.find((item) => item.no === no);
+        if (!member) {
+          alert('Data anggota tidak ditemukan.');
+          return;
+        }
+
+        editingMemberNo = member.no;
+        getElement('memberModalTitle').textContent = 'Edit Anggota';
+        getElement('saveMemberButton').textContent = 'Simpan Perubahan';
+        getElement('mNo').readOnly = false;
+        getElement('memberNumberHint').textContent = 'Nomor anggota dapat diubah.';
+        getElement('mNo').value = member.no;
+        getElement('mNis').value = member.nis || '';
+        getElement('mName').value = member.name || '';
+        getElement('mClass').value = member.cls || '';
+        getElement('mType').value = member.type === 'Guru' ? 'Guru' : 'Siswa';
+        getElement('mPhoto').value = '';
+        selectedMemberPhoto = typeof member.photo === 'string' ? member.photo : '';
+        setMemberPhotoPreview(selectedMemberPhoto, member.name || '');
+        updateMemberTypeFields();
+        getElement('memberModal').classList.add('show');
+      }
+
+      function updateMemberTypeFields() {
+        const isStudent = getElement('mType').value === 'Siswa';
+        getElement('memberNisField').hidden = !isStudent;
+        getElement('memberClassField').hidden = !isStudent;
+
+        if (!isStudent) {
+          getElement('mNis').value = '';
+          getElement('mClass').value = '';
+        }
+      }
+
+      function generateMemberNumber(type = getElement('mType').value) {
+        const prefix = type === 'Guru' ? 'GRU-' : 'SWA-';
+        const sequences = state.memberSequences || {};
+        const maxExistingNumber = state.members.reduce((max, member) => {
+          const match = new RegExp('^' + prefix + '(\\d+)$', 'i').exec(member.no || '');
+          return match ? Math.max(max, Number(match[1])) : max;
+        }, Number(sequences[prefix]) || 0);
+
+        return prefix + String(maxExistingNumber + 1).padStart(3, '0');
+      }
+
+      function setMemberPhotoPreview(photo, name = '') {
+        const preview = getElement('memberPhotoPreview');
+
+        if (photo) {
+          preview.innerHTML = `<img src="${photo}" alt="Pratinjau foto anggota" />`;
+          return;
+        }
+
+        preview.textContent = name.trim().charAt(0).toUpperCase() || 'Foto';
+      }
+
+      async function compressMemberPhoto(file) {
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Pilih berkas gambar untuk foto anggota.');
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error('Ukuran foto maksimal 10 MB.');
+        }
+
+        const imageUrl = URL.createObjectURL(file);
+
+        try {
+          const image = new Image();
+          await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('Foto tidak dapat dibaca. Pilih gambar lain.'));
+            image.src = imageUrl;
+          });
+
+          const scale = Math.min(1, 480 / Math.max(image.naturalWidth, image.naturalHeight));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+          const context = canvas.getContext('2d');
+          if (!context) {
+            throw new Error('Foto tidak dapat diproses di perangkat ini.');
+          }
+
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const compressedPhoto = canvas.toDataURL('image/jpeg', 0.78);
+          if (compressedPhoto.length > 700000) {
+            throw new Error('Ukuran foto setelah diproses masih terlalu besar. Pilih foto lain.');
+          }
+
+          return compressedPhoto;
+        } finally {
+          URL.revokeObjectURL(imageUrl);
+        }
+      }
+
+      function saveMember() {
+        const member = {
+          no: getElement('mNo').value.trim(),
+          nis: getElement('mNis').value.trim(),
+          name: getElement('mName').value.trim(),
+          cls: getElement('mClass').value.trim(),
+          type: getElement('mType').value,
+          photo: selectedMemberPhoto
+        };
+
+        if (!member.no || !member.name) {
+          alert('Nomor anggota dan nama wajib diisi.');
+          return;
+        }
+
+        if (state.members.some((item) => item.no === member.no && item.no !== editingMemberNo)) {
+          alert('Nomor anggota sudah digunakan. Masukkan nomor yang berbeda.');
+          return;
+        }
+
+        if (editingMemberNo !== null) {
+          const existingMember = state.members.find((item) => item.no === editingMemberNo);
+          if (!existingMember) {
+            alert('Data anggota tidak ditemukan. Perubahan tidak disimpan.');
+            return;
+          }
+
+          if (existingMember.no !== member.no) {
+            state.loans.forEach((loan) => {
+              if (loan.member === existingMember.no) {
+                loan.member = member.no;
+              }
+            });
+          }
+
+          Object.assign(existingMember, member);
+        } else {
+          state.members.push(member);
+        }
+
+        const numberedId = /^(SWA|GRU)-(\d+)$/i.exec(member.no);
+        if (numberedId) {
+          const prefix = numberedId[1].toUpperCase() + '-';
+          state.memberSequences = state.memberSequences || {};
+          state.memberSequences[prefix] = Math.max(
+            Number(state.memberSequences[prefix]) || 0,
+            Number(numberedId[2])
+          );
+        }
+
+        persist();
+        closeModal('memberModal');
+      }
+
+      function deleteMember(code) {
+        if (!confirm('Hapus anggota ini?')) {
+          return;
+        }
+
+        state.members = state.members.filter((member) => member.no !== code);
+        persist();
+      }
+
+      function showQR(type, id) {
+        const item = type === 'book'
+          ? state.books.find((book) => book.code === id)
+          : state.members.find((member) => member.no === id);
+
+        if (!item) {
+          return;
+        }
+
+        const memberBarcode = type === 'member'
+          ? String(item.type === 'Guru' ? item.no || '' : item.nis || '').trim()
+          : '';
+        if (type === 'member' && !memberBarcode) {
+          alert(item.type === 'Guru'
+            ? 'Nomor anggota guru belum diisi. Lengkapi data anggota sebelum membuat QR.'
+            : 'NIS/NISN anggota belum diisi. Lengkapi data anggota sebelum membuat QR.');
+          return;
+        }
+
+        const payload = type === 'book' ? 'BOOK:' + id : memberBarcode;
+        const label = type === 'book' ? 'Buku' : 'Anggota';
+        const text = type === 'book' ? item.title : item.name;
+        const barcodeLabel = item.type === 'Guru' ? 'No. Anggota' : 'NIS/NISN';
+
+        getElement('qrTitle').textContent = 'QR ' + label;
+        getElement('qrText').textContent = type === 'book'
+          ? text + ' • ' + id
+          : text + ' • ' + barcodeLabel + ': ' + memberBarcode;
+        getElement('qrBox').innerHTML = '';
+
+        new QRCode(getElement('qrBox'), {
+          text: payload,
+          width: 220,
+          height: 220
+        });
+
+        getElement('qrModal').classList.add('show');
+      }
+
+      function printQR() {
+        const qrHTML = getElement('qrBox').innerHTML;
+        const qrText = getElement('qrText').textContent;
+        const printWindow = window.open('', '_blank');
+
+        printWindow.document.write(`
+          <html>
+            <body style="text-align: center; font-family: Arial, sans-serif; padding: 30px;">
+              <h2>SDN 013 KEPENUHAN</h2>
+              <h3>${qrText}</h3>
+              ${qrHTML}
+              <script>window.print()<\/script>
+            </body>
+          </html>
+        `);
+
+        printWindow.document.close();
+      }
+
+      function openLoan() {
+        getElement('loanMember').innerHTML = state.members
+          .map((member) => {
+            const activeLoans = getActiveLoanCount(member.no);
+            const limitReached = activeLoans >= MAX_ACTIVE_LOANS_PER_MEMBER;
+            const limitText = limitReached ? ' - batas pinjaman tercapai' : ` - ${activeLoans}/3 dipinjam`;
+
+            return `<option value="${esc(member.no)}" ${limitReached ? 'disabled' : ''}>${esc(member.name)} - ${esc(member.no)}${limitText}</option>`;
+          })
+          .join('');
+        updateLoanLimitHint();
+
+        getElement('loanBook').innerHTML = state.books
+          .filter((book) => book.stock > 0)
+          .map((book) => `<option value="${book.code}">${esc(book.title)} - ${esc(book.code)}</option>`)
+          .join('');
+
+        const today = new Date();
+        getElement('loanDate').value = today.toISOString().slice(0, 10);
+
+        const due = new Date(today);
+        due.setDate(due.getDate() + 7);
+        getElement('dueDate').value = due.toISOString().slice(0, 10);
+
+        getElement('loanModal').classList.add('show');
+      }
+
+      function getActiveLoanCount(memberNo) {
+        return state.loans.filter((loan) => loan.member === memberNo && !loan.returned).length;
+      }
+
+      function updateLoanLimitHint() {
+        const memberNo = getElement('loanMember').value;
+        const activeLoans = getActiveLoanCount(memberNo);
+        const remainingLoans = Math.max(0, MAX_ACTIVE_LOANS_PER_MEMBER - activeLoans);
+        getElement('loanLimitHint').textContent = memberNo
+          ? `${activeLoans}/3 buku belum dikembalikan. Sisa kuota: ${remainingLoans}.`
+          : 'Tidak ada anggota yang memenuhi batas peminjaman.';
+      }
+
+      function saveLoan() {
+        if (!getElement('loanMember').value || !getElement('loanBook').value) {
+          alert('Data anggota dan buku harus tersedia.');
+          return;
+        }
+
+        const memberNo = getElement('loanMember').value;
+        if (getActiveLoanCount(memberNo) >= MAX_ACTIVE_LOANS_PER_MEMBER) {
+          alert('Anggota sudah memiliki 3 buku yang belum dikembalikan. Pengembalian harus dilakukan sebelum meminjam lagi.');
+          openLoan();
+          return;
+        }
+
+        const book = state.books.find((item) => item.code === getElement('loanBook').value);
+
+        if (!book || book.stock < 1) {
+          alert('Stok buku habis.');
+          return;
+        }
+
+        state.loans.push({
+          id: 'P' + Date.now().toString().slice(-8),
+          member: getElement('loanMember').value,
+          book: getElement('loanBook').value,
+          date: getElement('loanDate').value,
+          due: getElement('dueDate').value,
+          returned: false
+        });
+
+        book.stock -= 1;
+        persist();
+        closeModal('loanModal');
+      }
+
+      function returnBook(id) {
+        const loan = state.loans.find((item) => item.id === id);
+
+        if (!loan) {
+          return;
+        }
+
+        loan.returned = true;
+        loan.returnDate = new Date().toISOString().slice(0, 10);
+
+        const book = state.books.find((item) => item.code === loan.book);
+        if (book) {
+          book.stock += 1;
+        }
+
+        persist();
+      }
+
+      function closeModal(id) {
+        getElement(id).classList.remove('show');
+        if (id === 'memberModal') {
+          editingMemberNo = null;
+          getElement('mNo').readOnly = true;
+          getElement('memberNumberHint').textContent = 'Nomor dibuat otomatis.';
+        }
+      }
+
+      function startScanner() {
+        if (scanner) {
+          return;
+        }
+
+        prepareScanAudio();
+        const startButton = getElement('startScannerButton');
+        const status = getElement('scannerStatus');
+        startButton.disabled = true;
+        startButton.textContent = 'Mengaktifkan kamera...';
+        status.dataset.state = 'starting';
+        status.textContent = 'Meminta izin kamera...';
+        scanner = new Html5Qrcode('reader');
+
+        scanner
+          .start(
+            { facingMode: 'environment' },
+            {
+              fps: 10,
+              qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const size = Math.floor(Math.min(viewfinderWidth, viewfinderHeight, 360) * 0.8);
+                return { width: size, height: size };
+              }
+            },
+            (text) => {
+              handleQrScan(text);
+            },
+            () => {}
+          )
+          .then(() => {
+            getElement('reader').classList.add('is-scanning');
+            startButton.textContent = '✓ Kamera aktif';
+            status.dataset.state = 'active';
+            status.textContent = 'Kamera aktif — arahkan QR ke kotak pemindaian.';
+          })
+          .catch(() => {
+            scanner = null;
+            getElement('reader').classList.remove('is-scanning');
+            startButton.disabled = false;
+            startButton.textContent = '📷 Coba aktifkan kamera lagi';
+            status.dataset.state = 'error';
+            status.textContent = 'Kamera tidak tersedia atau izinnya ditolak. Izinkan akses kamera dan buka aplikasi melalui HTTPS atau localhost, lalu coba lagi.';
+          });
+      }
+
+      function handleQrScan(text) {
+        const now = Date.now();
+        const shouldPlayChime = text !== lastChimeQr || now - lastChimeQrAt >= 5000;
+
+        const match = findScannedQrRecord(text);
+        if (!match) {
+          getElement('scanResult').className = 'empty';
+          getElement('scanResult').textContent = 'QR tidak sesuai dengan data buku atau anggota.';
+          showScanPopup(false, 'QR salah', `Data QR "${text}" tidak ditemukan.`, '×');
+          return;
+        }
+
+        if (match.type === 'member') {
+          const visit = recordVisitorScan(match, now);
+          if (!visit.recorded) {
+            getElement('scanResult').className = 'empty';
+            getElement('scanResult').textContent = `Barcode ${match.item.name} sudah dipindai. Tunggu ${formatElapsedTime(Math.max(0, VISITOR_SCAN_DEBOUNCE_MS - visit.elapsedMs))} sebelum scan berikutnya dihitung sebagai kunjungan baru.`;
+            return;
+          }
+
+          const visitMessage = visit.direction === 'Keluar'
+            ? `Kunjungan ke-${visit.visitNumber} selesai. Durasi sejak masuk: ${formatElapsedTime(visit.elapsedMs)}.`
+            : `Kunjungan ke-${visit.visitNumber} dimulai.`;
+          const description = `Anggota: ${match.item.name} (${match.barcodeLabel}: ${match.barcode}). ${visitMessage}`;
+          getElement('scanResult').className = 'empty';
+          getElement('scanResult').textContent = description;
+          showScanPopup(true, `QR ${visit.direction}`, description, '✓');
+        } else {
+          const description = `Buku: ${match.item.title} (${match.item.code})`;
+          getElement('scanResult').className = 'empty';
+          getElement('scanResult').textContent = `QR valid — ${description}`;
+          showScanPopup(true, 'QR berhasil dipindai', description, '✓');
+        }
+
+        if (shouldPlayChime) {
+          lastChimeQr = text;
+          lastChimeQrAt = now;
+          playScanChime();
+        }
+      }
+
+      function recordVisitorScan(match, scannedAt) {
+        if (match.type !== 'member') {
+          return;
+        }
+
+        const member = match.item;
+        const memberKey = String(member.no || match.barcode || '').toLowerCase();
+        const previousVisits = state.visitors.filter((visitor) =>
+          String(visitor.memberNo || visitor.barcode || '').toLowerCase() === memberKey
+        );
+        const previousVisitor = previousVisits.reduce((latest, visitor) =>
+          !latest || new Date(visitor.scannedAt).getTime() > new Date(latest.scannedAt).getTime()
+            ? visitor
+            : latest,
+        null);
+        const previousScanAt = previousVisitor ? new Date(previousVisitor.scannedAt).getTime() : null;
+        const timeSincePreviousScan = previousScanAt === null ? null : Math.max(0, scannedAt - previousScanAt);
+
+        if (timeSincePreviousScan !== null && timeSincePreviousScan < VISITOR_SCAN_DEBOUNCE_MS) {
+          return { recorded: false, elapsedMs: timeSincePreviousScan };
+        }
+
+        const scanNumber = previousVisits.length + 1;
+        const visitNumber = Math.ceil(scanNumber / 2);
+        const direction = scanNumber % 2 === 1 ? 'Masuk' : 'Keluar';
+        const elapsedMs = direction === 'Keluar' && previousVisitor?.direction === 'Masuk'
+          ? timeSincePreviousScan
+          : null;
+        const visitor = {
+          scannedAt: new Date(scannedAt).toISOString(),
+          direction,
+          memberNo: member.no || '',
+          name: member.name || '',
+          memberType: member.type || '',
+          barcodeLabel: match.barcodeLabel || '',
+          barcode: match.barcode || '',
+          visitNumber,
+          elapsedMs
+        };
+        state.visitors.unshift(visitor);
+        persist();
+        return { recorded: true, visitNumber: visitor.visitNumber, direction, elapsedMs };
+      }
+
+      function findScannedQrRecord(text) {
+        const payload = String(text || '').trim();
+        if (!payload) {
+          return null;
+        }
+
+        const bookPrefix = /^BOOK:/i.exec(payload);
+        if (bookPrefix) {
+          const code = payload.slice(bookPrefix[0].length).trim();
+          const book = state.books.find((item) => String(item.code || '').toLowerCase() === code.toLowerCase());
+          return book ? { type: 'book', item: book } : null;
+        }
+
+        const legacyMemberPrefix = /^MEMBER:/i.exec(payload);
+        if (legacyMemberPrefix) {
+          const memberNo = payload.slice(legacyMemberPrefix[0].length).trim();
+          const member = state.members.find((item) => String(item.no || '').toLowerCase() === memberNo.toLowerCase());
+          return member ? { type: 'member', item: member, barcode: memberNo, barcodeLabel: 'No. Anggota' } : null;
+        }
+
+        const member = state.members.find((item) => {
+          const barcode = item.type === 'Guru' ? item.no : item.nis;
+          return String(barcode || '').trim().toLowerCase() === payload.toLowerCase();
+        });
+        if (!member) {
+          return null;
+        }
+
+        return {
+          type: 'member',
+          item: member,
+          barcode: String(member.type === 'Guru' ? member.no : member.nis).trim(),
+          barcodeLabel: member.type === 'Guru' ? 'No. Anggota' : 'NIS/NISN'
+        };
+      }
+
+      function showScanPopup(isValid, title, message, icon) {
+        if (scanPopupTimer) {
+          clearTimeout(scanPopupTimer);
+        }
+
+        const popupBox = getElement('scanPopupBox');
+        const popupIcon = getElement('scanPopupIcon');
+        popupBox.className = `scan-popupbox ${isValid ? 'success' : 'error'}`;
+        popupIcon.textContent = icon;
+        getElement('scanPopupTitle').textContent = title;
+        getElement('scanPopupMessage').textContent = message;
+        getElement('scanPopup').classList.add('show');
+        scanPopupTimer = setTimeout(closeScanPopup, 3000);
+      }
+
+      function closeScanPopup() {
+        getElement('scanPopup').classList.remove('show');
+        if (scanPopupTimer) {
+          clearTimeout(scanPopupTimer);
+          scanPopupTimer = null;
+        }
+      }
+
+      function prepareScanAudio() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+          return;
+        }
+
+        if (!scanAudioContext) {
+          try {
+            scanAudioContext = new AudioContextClass();
+          } catch (error) {
+            console.warn('Nada konfirmasi tidak dapat diinisialisasi.', error);
+            return;
+          }
+        }
+
+        if (scanAudioContext.state === 'suspended') {
+          scanAudioContext.resume().catch((error) => {
+            console.warn('Nada konfirmasi tidak dapat diaktifkan.', error);
+          });
+        }
+      }
+
+      function playScanChime() {
+        if (!scanAudioContext || scanAudioContext.state !== 'running') {
+          return;
+        }
+
+        const startTime = scanAudioContext.currentTime;
+        [880, 1174.66].forEach((frequency, index) => {
+          const oscillator = scanAudioContext.createOscillator();
+          const gain = scanAudioContext.createGain();
+          const noteStart = startTime + index * 0.12;
+
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(frequency, noteStart);
+          gain.gain.setValueAtTime(0.0001, noteStart);
+          gain.gain.exponentialRampToValueAtTime(0.18, noteStart + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.16);
+          oscillator.connect(gain);
+          gain.connect(scanAudioContext.destination);
+          oscillator.start(noteStart);
+          oscillator.stop(noteStart + 0.17);
+        });
+      }
+
+      async function initialize() {
+        updateAll();
+        showPage('dashboard');
+        getElement('adminLogin').hidden = false;
+
+        if (typeof window.supabase?.createClient !== 'function') {
+          setLoginMessage('Pustaka Supabase gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.', 'info');
+          return;
+        }
+        if (!/^https:\/\/[^/]+\.supabase\.co$/.test(SUPABASE_CONFIG.url || '') ||
+            !SUPABASE_CONFIG.anonKey ||
+            SUPABASE_CONFIG.anonKey === 'YOUR_SUPABASE_ANON_KEY') {
+          setLoginMessage('Konfigurasi Supabase belum lengkap. Isi URL proyek dan anon key pada supabase-config.js.', 'info');
+          return;
+        }
+
+        try {
+          supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+          const { data, error } = await supabaseClient.auth.getSession();
+          if (error) throw error;
+          if (data.session) {
+            currentUser = data.session.user;
+            getElement('adminLogin').hidden = true;
+            await initializeSupabaseDatabase();
+          } else {
+            setLoginMessage('Masuk menggunakan akun admin Supabase.', 'info');
+          }
+        } catch (error) {
+          console.error('Supabase gagal diinisialisasi.', error);
+          setLoginMessage(`Supabase belum dapat dihubungkan: ${error.message}`, 'info');
+        }
+      }
+
+      getElement('adminLoginForm').addEventListener('submit', submitAdminLogin);
+      getElement('mobileMenuButton').addEventListener('click', toggleMobileMenu);
+      getElement('mobileNavBackdrop').addEventListener('click', closeMobileMenu);
+      getElement('mPhoto').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+          return;
+        }
+
+        try {
+          selectedMemberPhoto = await compressMemberPhoto(file);
+          setMemberPhotoPreview(selectedMemberPhoto);
+        } catch (error) {
+          selectedMemberPhoto = '';
+          event.target.value = '';
+          setMemberPhotoPreview('', getElement('mName').value);
+          alert(error.message);
+        }
+      });
+      getElement('mName').addEventListener('input', () => {
+        if (!selectedMemberPhoto) {
+          setMemberPhotoPreview('', getElement('mName').value);
+        }
+      });
+      getElement('memberRows').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-member-action]');
+        if (!button) {
+          return;
+        }
+
+        const { memberAction, memberNo } = button.dataset;
+        if (memberAction === 'edit') {
+          editMember(memberNo);
+        } else if (memberAction === 'qr') {
+          showQR('member', memberNo);
+        } else if (memberAction === 'delete') {
+          deleteMember(memberNo);
+        }
+      });
+      getElement('mType').addEventListener('change', (event) => {
+        if (editingMemberNo === null) {
+          getElement('mNo').value = generateMemberNumber(event.target.value);
+        }
+        updateMemberTypeFields();
+      });
+      getElement('loanMember').addEventListener('change', updateLoanLimitHint);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeMobileMenu();
+          closeScanPopup();
+        }
+      });
+
+      initialize();
+    </script>
+  </body>
+</html>
